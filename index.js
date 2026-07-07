@@ -94,7 +94,9 @@ app.post("/delete", (req, res) => {
     //글 번호 삭제할 이미지의 경로 파악
       db.query("SELECT image_path FROM board WHERE id=?", [id], (err, result) => {
     if (err) throw err;
-    console.log(result);
+    const existingImagePath = result[0] ? result[0].image_path : null;
+    deleteUploadedFile(existingImagePath);
+    
   });
   // const sqlQuery = "DELETE FROM board WHERE id=?";
   // db.query(sqlQuery, [id], (err, result) => {
@@ -113,6 +115,19 @@ app.post("/delete", (req, res) => {
 app.post("/deleteselect", (req, res) => {
   console.log(req.body);
     const { boardIdList } = req.body;
+    //서버에서 여러 이미지 삭제
+      db.query(`SELECT image_path FROM board WHERE id in (${boardList})`, (err, result) => {
+    if (err) throw err;
+    if(result && result.length > 0){
+      result.forEach(item=>{
+        deleteUploadedFile(item.image.path);
+      });
+    }
+    //const existingImagePath = result[0] ? result[0].image_path : null;
+   // deleteUploadedFile(existingImagePath);
+    
+  });
+
 
   const sqlQuery =`delete from board where id in (${boardIdList})`;
 
@@ -133,6 +148,14 @@ app.post("/update", (req, res) => {
   let params;
 
   if(shouldRemoveImage && !imagePath){
+
+     db.query("SELECT image_path FROM board WHERE id=?", [id], (err, result) => {
+    if (err) throw err;
+    const existingImagePath = result[0] ? result[0].image_path : null;
+    deleteUploadedFile(existingImagePath);
+    
+  });
+
     sqlQuery = "UPDATE board SET writer=?, title=?, content=?, image_path=NULL WHERE id=?";
     params = [writer, title, content, id];
 
